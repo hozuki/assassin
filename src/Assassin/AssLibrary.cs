@@ -5,10 +5,10 @@ using Assassin.Native;
 using JetBrains.Annotations;
 
 namespace Assassin {
-    public class AssLibrary : IDisposableEx {
+    public class AssLibrary : INativeObject {
 
-        private AssLibrary(IntPtr handle) {
-            _handle = handle;
+        private AssLibrary(IntPtr nativePointer) {
+            _nativePointer = nativePointer;
         }
 
         ~AssLibrary() {
@@ -30,7 +30,7 @@ namespace Assassin {
         public AssRenderer CreateRenderer() {
             this.EnsureNotDisposed();
 
-            var rendererHandle = NativeMethods.ass_renderer_init(_handle);
+            var rendererHandle = NativeMethods.ass_renderer_init(_nativePointer);
 
             if (rendererHandle == IntPtr.Zero) {
                 throw new AssException("Cannot create renderer");
@@ -60,7 +60,7 @@ namespace Assassin {
             DefaultFontProvider[] result;
 
             unsafe {
-                NativeMethods.ass_get_available_font_providers(_handle, out var providers, out var size);
+                NativeMethods.ass_get_available_font_providers(_nativePointer, out var providers, out var size);
 
                 var s = size.ToUInt32();
                 var typedProviders = (DefaultFontProvider*)providers;
@@ -89,9 +89,9 @@ namespace Assassin {
 
         public bool IsDisposed { get; private set; }
 
-        public IntPtr Handle {
+        public IntPtr NativePointer {
             [DebuggerStepThrough]
-            get => _handle;
+            get => _nativePointer;
         }
 
         private void Dispose(bool disposing) {
@@ -99,11 +99,11 @@ namespace Assassin {
                 return;
             }
 
-            if (_handle != IntPtr.Zero) {
-                NativeMethods.ass_library_done(_handle);
+            if (_nativePointer != IntPtr.Zero) {
+                NativeMethods.ass_library_done(_nativePointer);
             }
 
-            _handle = IntPtr.Zero;
+            _nativePointer = IntPtr.Zero;
 
             IsDisposed = true;
 
@@ -112,7 +112,7 @@ namespace Assassin {
             }
         }
 
-        private IntPtr _handle;
+        private IntPtr _nativePointer;
 
     }
 }

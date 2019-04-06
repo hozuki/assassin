@@ -4,10 +4,10 @@ using Assassin.Native;
 using JetBrains.Annotations;
 
 namespace Assassin {
-    public class AssTrack : IDisposableEx {
+    public class AssTrack : INativeObject {
 
-        internal AssTrack(IntPtr trackPtr) {
-            _trackPtr = trackPtr;
+        internal AssTrack(IntPtr nativePointer) {
+            _nativePointer = nativePointer;
         }
 
         ~AssTrack() {
@@ -20,18 +20,18 @@ namespace Assassin {
 
         public bool IsDisposed { get; private set; }
 
-        internal IntPtr Handle => _trackPtr;
+        public IntPtr NativePointer => _nativePointer;
 
         private void Dispose(bool disposing) {
             if (IsDisposed) {
                 return;
             }
 
-            if (_trackPtr != IntPtr.Zero) {
-                NativeMethods.ass_free_track(_trackPtr);
+            if (_nativePointer != IntPtr.Zero) {
+                NativeMethods.ass_free_track(_nativePointer);
             }
 
-            _trackPtr = IntPtr.Zero;
+            _nativePointer = IntPtr.Zero;
 
             IsDisposed = true;
 
@@ -40,17 +40,7 @@ namespace Assassin {
             }
         }
 
-        [NotNull]
-        private unsafe Assassin.Native.AssTrack* GetTypedPointer() {
-            this.EnsureNotDisposed();
-
-            Trace.Assert(_trackPtr != IntPtr.Zero);
-
-            // ReSharper disable once AssignNullToNotNullAttribute
-            return (Assassin.Native.AssTrack*)_trackPtr;
-        }
-
-        private IntPtr _trackPtr;
+        private IntPtr _nativePointer;
 
     }
 }

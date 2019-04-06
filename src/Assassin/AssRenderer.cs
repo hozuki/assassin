@@ -4,10 +4,10 @@ using Assassin.Native;
 using JetBrains.Annotations;
 
 namespace Assassin {
-    public class AssRenderer : IDisposableEx {
+    public class AssRenderer : INativeObject {
 
-        internal AssRenderer(IntPtr handle) {
-            _handle = handle;
+        internal AssRenderer(IntPtr nativePointer) {
+            _nativePointer = nativePointer;
         }
 
         ~AssRenderer() {
@@ -17,7 +17,7 @@ namespace Assassin {
         public void SetFrameSize(int width, int height) {
             this.EnsureNotDisposed();
 
-            NativeMethods.ass_set_frame_size(_handle, width, height);
+            NativeMethods.ass_set_frame_size(_nativePointer, width, height);
 
             _width = width;
             _height = height;
@@ -26,7 +26,7 @@ namespace Assassin {
         public void SetFonts([NotNull] string familyName) {
             this.EnsureNotDisposed();
 
-            NativeMethods.ass_set_fonts(_handle, null, familyName, DefaultFontProvider.AutoDetect, null, true);
+            NativeMethods.ass_set_fonts(_nativePointer, null, familyName, DefaultFontProvider.AutoDetect, null, true);
         }
 
         [NotNull]
@@ -42,11 +42,16 @@ namespace Assassin {
                 throw new AssException("Cannot render frame: frame dimensions are not initialized");
             }
 
-            var framePointer = NativeMethods.ass_render_frame(_handle, track.Handle, timestamp, out frameChange);
-            
+            var framePointer = NativeMethods.ass_render_frame(_nativePointer, track.NativePointer, timestamp, out frameChange);
+
             // framePointer == nullptr => the image is blank
 
             return new AssImage(this, framePointer);
+        }
+
+        public IntPtr NativePointer {
+            [DebuggerStepThrough]
+            get => _nativePointer;
         }
 
         public void Dispose() {
@@ -70,11 +75,11 @@ namespace Assassin {
                 return;
             }
 
-            if (_handle != IntPtr.Zero) {
-                NativeMethods.ass_renderer_done(_handle);
+            if (_nativePointer != IntPtr.Zero) {
+                NativeMethods.ass_renderer_done(_nativePointer);
             }
 
-            _handle = IntPtr.Zero;
+            _nativePointer = IntPtr.Zero;
 
             IsDisposed = true;
 
@@ -86,7 +91,7 @@ namespace Assassin {
         private int _width;
         private int _height;
 
-        private IntPtr _handle;
+        private IntPtr _nativePointer;
 
     }
 }

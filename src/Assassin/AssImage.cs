@@ -6,10 +6,10 @@ using Assassin.Native;
 using JetBrains.Annotations;
 
 namespace Assassin {
-    public sealed class AssImage {
+    public sealed class AssImage : IPointerWrapper {
 
-        internal AssImage([NotNull] AssRenderer renderer, IntPtr imagePtr) {
-            _imagePtr = imagePtr;
+        internal AssImage([NotNull] AssRenderer renderer, IntPtr nativePointer) {
+            _nativePointer = nativePointer;
             _renderer = renderer;
         }
 
@@ -36,6 +36,11 @@ namespace Assassin {
 
                 Blend(rgbaImage, image);
             }
+        }
+
+        public IntPtr NativePointer {
+            [DebuggerStepThrough]
+            get => _nativePointer;
         }
 
         private static unsafe void Blend([NotNull] RgbaImage rgbaImage, [CanBeNull] Assassin.Native.AssImage* image) {
@@ -115,10 +120,10 @@ namespace Assassin {
         [CanBeNull]
         private unsafe Assassin.Native.AssImage* GetTypedPointer() {
             // ReSharper disable once AssignNullToNotNullAttribute
-            return (Assassin.Native.AssImage*)_imagePtr;
+            return (Assassin.Native.AssImage*)_nativePointer;
         }
 
-        private readonly IntPtr _imagePtr;
+        private readonly IntPtr _nativePointer;
 
         [NotNull]
         private readonly AssRenderer _renderer;

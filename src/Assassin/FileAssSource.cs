@@ -11,7 +11,7 @@ namespace Assassin {
         }
 
         public AssTrack CreateTrack(AssLibrary library) {
-            var trackPtr = NativeMethods.ass_read_file(library.Handle, _fileName, _codePage);
+            var trackPtr = NativeMethods.ass_read_file(library.NativePointer, _fileName, _codePage);
 
             if (trackPtr == IntPtr.Zero) {
                 throw new AssException("Cannot create track from file");

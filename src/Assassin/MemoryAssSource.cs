@@ -32,7 +32,7 @@ namespace Assassin {
 
             Marshal.Copy(_data, 0, buffer, _data.Length);
 
-            var trackPtr = NativeMethods.ass_read_memory(library.Handle, buffer, _data.Length, _codePage);
+            var trackPtr = NativeMethods.ass_read_memory(library.NativePointer, buffer, _data.Length, _codePage);
 
             Marshal.FreeHGlobal(buffer);
 

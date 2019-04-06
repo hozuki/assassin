@@ -37,7 +37,7 @@ namespace Assassin {
                 fixed (byte* bufferPtr = data) {
                     var buffer = new IntPtr(bufferPtr);
 
-                    trackPtr = NativeMethods.ass_read_memory(library.Handle, buffer, data.Length, _codePage);
+                    trackPtr = NativeMethods.ass_read_memory(library.NativePointer, buffer, data.Length, _codePage);
                 }
             }
 
