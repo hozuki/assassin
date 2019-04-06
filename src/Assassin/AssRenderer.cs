@@ -43,10 +43,8 @@ namespace Assassin {
             }
 
             var framePointer = NativeMethods.ass_render_frame(_handle, track.Handle, timestamp, out frameChange);
-
-            if (framePointer == IntPtr.Zero) {
-                throw new AssException("Cannot render frame");
-            }
+            
+            // framePointer == nullptr => the image is blank
 
             return new AssImage(this, framePointer);
         }

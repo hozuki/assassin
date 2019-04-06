@@ -51,7 +51,9 @@ namespace Assassin {
                 image = next;
             }
 
+#if DEBUG
             Debug.Print("Blended images: {0}", blendedCount.ToString());
+#endif
         }
 
         private static unsafe void BlendSingle([NotNull] RgbaImage rgbaImage, [NotNull] Assassin.Native.AssImage* image) {
@@ -109,10 +111,9 @@ namespace Assassin {
             };
         }
 
-        [NotNull]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [CanBeNull]
         private unsafe Assassin.Native.AssImage* GetTypedPointer() {
-            Trace.Assert(_imagePtr != IntPtr.Zero);
-
             // ReSharper disable once AssignNullToNotNullAttribute
             return (Assassin.Native.AssImage*)_imagePtr;
         }
