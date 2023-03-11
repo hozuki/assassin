@@ -15,7 +15,7 @@ public sealed class RgbaImage
         Width = width;
         Height = height;
 
-        _buffer = new Color32[width * height];
+        _buffer = new Color32Rgba[width * height];
     }
 
     public int Width
@@ -36,14 +36,14 @@ public sealed class RgbaImage
         Array.Clear(_buffer, 0, _buffer.Length);
     }
 
-    public Color32[] Buffer
+    public Color32Rgba[] Buffer
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [DebuggerStepThrough]
         get => _buffer;
     }
 
-    public Color32 ReadPixel(int x, int y)
+    public Color32Rgba ReadPixel(int x, int y)
     {
         if (x < 0 || x >= Width)
         {
@@ -60,6 +60,6 @@ public sealed class RgbaImage
         return _buffer[index];
     }
 
-    private readonly Color32[] _buffer;
+    private readonly Color32Rgba[] _buffer;
 
 }

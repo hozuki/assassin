@@ -1,8 +1,6 @@
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 using Assassin.Native;
-using JetBrains.Annotations;
 
 namespace Assassin;
 
@@ -21,25 +19,18 @@ public readonly ref struct AssImage
 
     public RgbaImage Blend()
     {
-        if (_nativePointer == IntPtr.Zero)
-        {
-            throw new ArgumentException("Underlying pointer is null.");
-        }
-
         var imageBuffer = new RgbaImage(_rendererWidth, _rendererHeight);
 
-        Blend(imageBuffer);
+        if (_nativePointer != IntPtr.Zero)
+        {
+            Blend(imageBuffer);
+        }
 
         return imageBuffer;
     }
 
     public void Blend(RgbaImage rgbaImage)
     {
-        if (_nativePointer == IntPtr.Zero)
-        {
-            throw new ArgumentException("Underlying pointer is null.");
-        }
-
         if (rgbaImage is null)
         {
             throw new ArgumentNullException(nameof(rgbaImage));
@@ -47,38 +38,62 @@ public readonly ref struct AssImage
 
         if (rgbaImage.Width < _rendererWidth || rgbaImage.Height < _rendererHeight)
         {
-            throw new ArgumentException("Cannot blend into a buffer smaller than renderer size", nameof(rgbaImage));
+            throw new ArgumentException("Cannot blend into a buffer smaller than renderer size.", nameof(rgbaImage));
+        }
+
+        if (_nativePointer == IntPtr.Zero)
+        {
+            // The subtitle image is empty, so skip blending with video image.
+            return;
         }
 
         unsafe
         {
             var image = (ASS_Image*)_nativePointer;
 
-            Blend(rgbaImage, image);
+            fixed (Color32Rgba* buffer = rgbaImage.Buffer)
+            {
+                Blend(buffer, rgbaImage.Width, rgbaImage.Height, image);
+            }
         }
     }
 
-    private static unsafe void Blend(RgbaImage rgbaImage, [CanBeNull] ASS_Image* image)
+    public unsafe void Blend(Color32Rgba* buffer, int bufferWidth, int bufferHeight)
     {
-        var blendedCount = 0;
+        if (buffer is null)
+        {
+            throw new ArgumentNullException(nameof(buffer));
+        }
 
+        if (bufferWidth < _rendererWidth || bufferHeight < _rendererHeight)
+        {
+            throw new ArgumentException("Cannot blend into a buffer smaller than renderer size.", nameof(buffer));
+        }
+
+        if (_nativePointer == IntPtr.Zero)
+        {
+            // The subtitle image is empty, so skip blending with video image.
+            return;
+        }
+
+        var image = (ASS_Image*)_nativePointer;
+
+        Blend(buffer, bufferWidth, bufferHeight, image);
+    }
+
+    private static unsafe void Blend(Color32Rgba* buffer, int bufferWidth, int bufferHeight, [MaybeNull] ASS_Image* image)
+    {
         while (image is not null)
         {
-            BlendSingle(rgbaImage, image);
-
-            blendedCount += 1;
+            BlendSingle(buffer, bufferWidth, bufferHeight, image);
 
             var next = (ASS_Image*)image->Next;
 
             image = next;
         }
-
-#if DEBUG
-        Debug.Print("Blended images: {0}", blendedCount.ToString());
-#endif
     }
 
-    private static unsafe void BlendSingle(RgbaImage rgbaImage, [NotNull] ASS_Image* image)
+    private static unsafe void BlendSingle(Color32Rgba* buffer, int bufferWidth, int bufferHeight, [NotNull] ASS_Image* image)
     {
         var w = image->Width;
         var h = image->Height;
@@ -90,56 +105,37 @@ public readonly ref struct AssImage
             return;
         }
 
-        if (rgbaImage.Width < w || rgbaImage.Height < h)
+        if (bufferWidth < w || bufferHeight < h)
         {
             throw new AssException("Cannot render an ASS_Image to a buffer smaller than it");
         }
 
-        var color = Color32.FromUInt32(image->Color);
+        var assLayerColor = stackalloc Color32Abgr[1];
 
-        color.A = (byte)(byte.MaxValue - color.A);
+        assLayerColor->LoadUInt32(image->Color);
 
-        var opacity = color.A / (float)byte.MaxValue;
+        assLayerColor->A = (byte)(byte.MaxValue - assLayerColor->A);
+
+        var opacity = assLayerColor->A / (float)byte.MaxValue;
 
         var src = (byte*)image->Bitmap;
 
-        fixed (Color32* dst = rgbaImage.Buffer)
+        for (var y = 0; y < h; y += 1)
         {
-            for (var y = 0; y < h; y += 1)
+            // "The last bitmap row is not guaranteed to be padded up to stride size, e.g. in the worst case a bitmap has the size stride * (h - 1) + w."
+            var width = y < h - 1 ? w : s;
+
+            for (var x = 0; x < width; x += 1)
             {
-                // "The last bitmap row is not guaranteed to be padded up to stride size, e.g. in the worst case a bitmap has the size stride * (h - 1) + w."
-                var width = y < h - 1 ? w : s;
+                var srcIndex = y * image->Stride + x;
+                var dstIndex = (y + image->DestY) * bufferWidth + (x + image->DestX);
 
-                for (var x = 0; x < width; x += 1)
-                {
-                    var srcIndex = y * image->Stride + x;
-                    var dstIndex = (y + image->DestY) * rgbaImage.Width + (x + image->DestX);
+                var srcAlpha = src[srcIndex] * opacity / byte.MaxValue;
+                var dstAlpha = 1.0f - srcAlpha;
 
-                    var k = (src[srcIndex] * opacity) / byte.MaxValue;
-
-                    dst[dstIndex] = AlphaBlend(k, in color, in dst[dstIndex]);
-                }
+                Color32ImageBlending.BlendPixel(assLayerColor, srcAlpha, buffer + dstIndex, dstAlpha, buffer + dstIndex);
             }
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Color32 AlphaBlend(float pixel, in Color32 src, in Color32 dst)
-    {
-        var mk = 1 - pixel;
-
-        var r = Utilities.Clamp((int)(pixel * src.R + dst.R * mk), byte.MinValue, byte.MaxValue);
-        var g = Utilities.Clamp((int)(pixel * src.G + dst.G * mk), byte.MinValue, byte.MaxValue);
-        var b = Utilities.Clamp((int)(pixel * src.B + dst.B * mk), byte.MinValue, byte.MaxValue);
-        var a = Utilities.Clamp((int)(pixel * src.A + dst.A * mk), byte.MinValue, byte.MaxValue);
-
-        return new Color32
-        {
-            R = (byte)r,
-            G = (byte)g,
-            B = (byte)b,
-            A = (byte)a
-        };
     }
 
     private readonly int _rendererWidth;

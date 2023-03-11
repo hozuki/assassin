@@ -13,13 +13,13 @@ internal struct AssStyle
 
     public double FontSize;
 
-    public Color32 PrimaryColor;
+    public Color32Abgr PrimaryColor;
 
-    public Color32 SecondaryColor;
+    public Color32Abgr SecondaryColor;
 
-    public Color32 OutlineColor;
+    public Color32Abgr OutlineColor;
 
-    public Color32 BackColor;
+    public Color32Abgr BackColor;
 
     [MarshalAs(UnmanagedType.Bool)]
     public bool Bold;

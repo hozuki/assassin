@@ -23,12 +23,6 @@ internal static class Utilities
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Clamp(int value, int min, int max)
-    {
-        return value < min ? min : (value > max ? max : value);
-    }
-
     public static readonly Encoding Utf8;
 
 }
