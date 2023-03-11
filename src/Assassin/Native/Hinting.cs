@@ -1,10 +1,14 @@
-namespace Assassin.Native {
-    public enum Hinting {
+namespace Assassin.Native;
 
-        None = 0,
-        Light = 1,
-        Normal = 2,
-        Native = 3
+public enum Hinting
+{
 
-    }
+    None = 0,
+
+    Light = 1,
+
+    Normal = 2,
+
+    Native = 3
+
 }

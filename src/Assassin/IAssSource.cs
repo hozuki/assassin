@@ -1,13 +1,11 @@
-using JetBrains.Annotations;
+namespace Assassin;
 
-namespace Assassin {
-    /// <summary>
-    /// A source that provides ASS subtitle data.
-    /// </summary>
-    public interface IAssSource {
+/// <summary>
+/// A source that provides ASS subtitle data.
+/// </summary>
+public interface IAssSource
+{
 
-        [CanBeNull]
-        AssTrack CreateTrack([NotNull] AssLibrary library);
+    AssTrack CreateTrack(AssLibrary library);
 
-    }
 }

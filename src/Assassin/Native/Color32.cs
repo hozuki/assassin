@@ -1,34 +1,38 @@
 using System.Runtime.InteropServices;
 
-namespace Assassin.Native {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Color32 {
+namespace Assassin.Native;
 
-        public byte A;
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct Color32
+{
 
-        public byte B;
+    public byte A;
 
-        public byte G;
+    public byte B;
 
-        public byte R;
+    public byte G;
 
-        internal static Color32 FromUInt32(uint color) {
-            var r = (byte)((color >> 24) & 0xff);
-            var g = (byte)((color >> 16) & 0xff);
-            var b = (byte)((color >> 8) & 0xff);
-            var a = (byte)(color & 0xff);
+    public byte R;
 
-            return new Color32 {
-                R = r,
-                G = g,
-                B = b,
-                A = a
-            };
-        }
+    internal static Color32 FromUInt32(uint color)
+    {
+        var r = (byte)((color >> 24) & 0xff);
+        var g = (byte)((color >> 16) & 0xff);
+        var b = (byte)((color >> 8) & 0xff);
+        var a = (byte)(color & 0xff);
 
-        public override string ToString() {
-            return $"{{R={R.ToString()}, G={G.ToString()}, B={B.ToString()}, A={A.ToString()}}}";
-        }
-
+        return new Color32
+        {
+            R = r,
+            G = g,
+            B = b,
+            A = a
+        };
     }
+
+    public override string ToString()
+    {
+        return $"{{R={R}, G={G}, B={B}, A={A}}}";
+    }
+
 }

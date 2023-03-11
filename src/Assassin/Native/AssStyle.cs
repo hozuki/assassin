@@ -1,66 +1,67 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Assassin.Native {
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct AssStyle {
+namespace Assassin.Native;
 
-        public IntPtr Name;
+[StructLayout(LayoutKind.Sequential)]
+internal struct AssStyle
+{
 
-        public IntPtr FontName;
+    public IntPtr Name;
 
-        public double FontSize;
+    public IntPtr FontName;
 
-        public Color32 PrimaryColor;
+    public double FontSize;
 
-        public Color32 SecondaryColor;
+    public Color32 PrimaryColor;
 
-        public Color32 OutlineColor;
+    public Color32 SecondaryColor;
 
-        public Color32 BackColor;
+    public Color32 OutlineColor;
 
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool Bold;
+    public Color32 BackColor;
 
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool Italic;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool Bold;
 
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool Underline;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool Italic;
 
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool StrikeOut;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool Underline;
 
-        public double ScaleX;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool StrikeOut;
 
-        public double ScaleY;
+    public double ScaleX;
 
-        public double Spacing;
+    public double ScaleY;
 
-        public double Angle;
+    public double Spacing;
 
-        public int BorderStyle;
+    public double Angle;
 
-        public double Outline;
+    public int BorderStyle;
 
-        public double Shadow;
+    public double Outline;
 
-        public int Alignment;
+    public double Shadow;
 
-        public int MarginL;
+    public int Alignment;
 
-        public int MarginR;
+    public int MarginL;
 
-        public int MarginV;
+    public int MarginR;
 
-        public int Encoding;
+    public int MarginV;
 
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool TreatFontNameAsPattern;
+    public int Encoding;
 
-        public double Blur;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool TreatFontNameAsPattern;
 
-        public int Justify;
+    public double Blur;
 
-    }
+    public int Justify;
+
 }

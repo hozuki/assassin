@@ -1,97 +1,98 @@
 using System;
 using System.Diagnostics;
 using Assassin.Native;
-using JetBrains.Annotations;
 
-namespace Assassin {
-    public class AssRenderer : INativeObject {
+namespace Assassin
+{
+    public class AssRenderer : IDisposableEx, INativeResource<AssRendererHandle>
+    {
 
-        internal AssRenderer(IntPtr nativePointer) {
-            _nativePointer = nativePointer;
+        internal AssRenderer(AssRendererHandle safeHandle)
+        {
+            SafeHandle = safeHandle;
         }
 
-        ~AssRenderer() {
+        ~AssRenderer()
+        {
             Dispose(false);
         }
 
-        public void SetFrameSize(int width, int height) {
+        public void SetFrameSize(int width, int height)
+        {
             this.EnsureNotDisposed();
 
-            NativeMethods.ass_set_frame_size(_nativePointer, width, height);
+            NativeMethods.ass_set_frame_size(SafeHandle.DangerousGetHandle(), width, height);
 
             _width = width;
             _height = height;
         }
 
-        public void SetFonts([NotNull] string familyName) {
+        public void SetFonts(string familyName)
+        {
             this.EnsureNotDisposed();
 
-            NativeMethods.ass_set_fonts(_nativePointer, null, familyName, DefaultFontProvider.AutoDetect, null, true);
+            NativeMethods.ass_set_fonts(SafeHandle.DangerousGetHandle(), null, familyName, DefaultFontProvider.AutoDetect, null, true);
         }
 
-        [NotNull]
-        public AssImage RenderFrame([NotNull] AssTrack track, long timestamp) {
+        public AssImage RenderFrame(AssTrack track, long timestamp)
+        {
             return RenderFrame(track, timestamp, out _);
         }
 
-        [NotNull]
-        public AssImage RenderFrame([NotNull] AssTrack track, long timestamp, out FrameChange frameChange) {
+        public AssImage RenderFrame(AssTrack track, long timestamp, out FrameChange frameChange)
+        {
             this.EnsureNotDisposed();
 
-            if (_width <= 0 || _height <= 0) {
+            if (_width <= 0 || _height <= 0)
+            {
                 throw new AssException("Cannot render frame: frame dimensions are not initialized");
             }
 
-            var framePointer = NativeMethods.ass_render_frame(_nativePointer, track.NativePointer, timestamp, out frameChange);
+            var framePointer = NativeMethods.ass_render_frame(SafeHandle.DangerousGetHandle(), track.SafeHandle.DangerousGetHandle(), timestamp, out frameChange);
 
             // framePointer == nullptr => the image is blank
-
-            return new AssImage(this, framePointer);
+            return new AssImage(Width, Height, framePointer);
         }
 
-        public IntPtr NativePointer {
-            [DebuggerStepThrough]
-            get => _nativePointer;
-        }
-
-        public void Dispose() {
+        public void Dispose()
+        {
             Dispose(true);
         }
 
         public bool IsDisposed { get; private set; }
 
-        public int Width {
+        public int Width
+        {
             [DebuggerStepThrough]
             get => _width;
         }
 
-        public int Height {
+        public int Height
+        {
             [DebuggerStepThrough]
             get => _height;
         }
 
-        private void Dispose(bool disposing) {
-            if (IsDisposed) {
+        public AssRendererHandle SafeHandle { get; }
+
+        private void Dispose(bool disposing)
+        {
+            if (IsDisposed)
+            {
                 return;
             }
 
-            if (_nativePointer != IntPtr.Zero) {
-                NativeMethods.ass_renderer_done(_nativePointer);
-            }
-
-            _nativePointer = IntPtr.Zero;
-
             IsDisposed = true;
 
-            if (disposing) {
+            if (disposing)
+            {
+                SafeHandle.Dispose();
                 GC.SuppressFinalize(this);
             }
         }
 
         private int _width;
         private int _height;
-
-        private IntPtr _nativePointer;
 
     }
 }

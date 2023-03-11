@@ -1,9 +1,12 @@
-namespace Assassin.Native {
-    public enum TrackType {
+namespace Assassin.Native;
 
-        Unknown = 0,
-        Ass = 1,
-        Ssa = 2
+public enum TrackType
+{
 
-    }
+    Unknown = 0,
+
+    Ass = 1,
+
+    Ssa = 2
+
 }

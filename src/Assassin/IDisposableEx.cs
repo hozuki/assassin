@@ -1,9 +1,10 @@
 using System;
 
-namespace Assassin {
-    internal interface IDisposableEx : IDisposable {
+namespace Assassin;
 
-        bool IsDisposed { get; }
+internal interface IDisposableEx : IDisposable
+{
 
-    }
+    bool IsDisposed { get; }
+
 }

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU</Platforms>
-        <LangVersion>default</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
         <TargetFramework>net6.0</TargetFramework>
         <OutputType>Exe</OutputType>

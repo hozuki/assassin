@@ -1,8 +1,10 @@
-namespace Assassin.Native {
-    public enum ShapingLevel {
+namespace Assassin.Native;
 
-        Simple = 0,
-        Complex = 1
+public enum ShapingLevel
+{
 
-    }
+    Simple = 0,
+
+    Complex = 1
+
 }

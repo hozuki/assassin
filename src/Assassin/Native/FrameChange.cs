@@ -1,9 +1,12 @@
-namespace Assassin.Native {
-    public enum FrameChange {
+namespace Assassin.Native;
 
-        None = 0,
-        PositionChanged = 1,
-        ContentChanged = 2
+public enum FrameChange
+{
 
-    }
+    None = 0,
+
+    PositionChanged = 1,
+
+    ContentChanged = 2
+
 }

@@ -1,9 +1,12 @@
-namespace Assassin.Native {
-    public enum ImageType {
+namespace Assassin.Native;
 
-        Character = 0,
-        Outline = 1,
-        Shadow = 2
+public enum ImageType
+{
 
-    }
+    Character = 0,
+
+    Outline = 1,
+
+    Shadow = 2
+
 }

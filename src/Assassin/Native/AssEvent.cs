@@ -1,33 +1,34 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Assassin.Native {
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct AssEvent {
+namespace Assassin.Native;
 
-        public long Start;
+[StructLayout(LayoutKind.Sequential)]
+internal struct AssEvent
+{
 
-        public long Duration;
+    public long Start;
 
-        public int ReadOrder;
+    public long Duration;
 
-        public int Layer;
+    public int ReadOrder;
 
-        public int Style;
+    public int Layer;
 
-        public IntPtr Name;
+    public int Style;
 
-        public int MarginL;
+    public IntPtr Name;
 
-        public int MarginR;
+    public int MarginL;
 
-        public int MarginV;
+    public int MarginR;
 
-        public IntPtr Effect;
+    public int MarginV;
 
-        public IntPtr Text;
+    public IntPtr Effect;
 
-        public IntPtr RenderPriv;
+    public IntPtr Text;
 
-    }
+    public IntPtr RenderPriv;
+
 }

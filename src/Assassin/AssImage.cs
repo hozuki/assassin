@@ -1,132 +1,149 @@
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using Assassin.Native;
 using JetBrains.Annotations;
 
-namespace Assassin {
-    public sealed class AssImage : IPointerWrapper {
+namespace Assassin;
 
-        internal AssImage([NotNull] AssRenderer renderer, IntPtr nativePointer) {
-            _nativePointer = nativePointer;
-            _renderer = renderer;
+/// <summary>
+/// An image rendered by libass. This struct must be consumed immediately using <see cref="Blend()"/> or <see cref="Blend(RgbaImage)"/>.
+/// </summary>
+public readonly ref struct AssImage
+{
+
+    internal AssImage(int rendererWidth, int rendererHeight, IntPtr nativePointer)
+    {
+        _rendererWidth = rendererWidth;
+        _rendererHeight = rendererHeight;
+        _nativePointer = nativePointer;
+    }
+
+    public RgbaImage Blend()
+    {
+        if (_nativePointer == IntPtr.Zero)
+        {
+            throw new ArgumentException("Underlying pointer is null.");
         }
 
-        [NotNull]
-        public RgbaImage Blend() {
-            var imageBuffer = new RgbaImage(_renderer.Width, _renderer.Height);
+        var imageBuffer = new RgbaImage(_rendererWidth, _rendererHeight);
 
-            Blend(imageBuffer);
+        Blend(imageBuffer);
 
-            return imageBuffer;
+        return imageBuffer;
+    }
+
+    public void Blend(RgbaImage rgbaImage)
+    {
+        if (_nativePointer == IntPtr.Zero)
+        {
+            throw new ArgumentException("Underlying pointer is null.");
         }
 
-        public void Blend([NotNull] RgbaImage rgbaImage) {
-            if (rgbaImage == null) {
-                throw new ArgumentNullException(nameof(rgbaImage));
-            }
-
-            if (rgbaImage.Width < _renderer.Width || rgbaImage.Height < _renderer.Height) {
-                throw new ArgumentException("Cannot blend into a buffer smaller than renderer size", nameof(rgbaImage));
-            }
-
-            unsafe {
-                var image = GetTypedPointer();
-
-                Blend(rgbaImage, image);
-            }
+        if (rgbaImage is null)
+        {
+            throw new ArgumentNullException(nameof(rgbaImage));
         }
 
-        public IntPtr NativePointer {
-            [DebuggerStepThrough]
-            get => _nativePointer;
+        if (rgbaImage.Width < _rendererWidth || rgbaImage.Height < _rendererHeight)
+        {
+            throw new ArgumentException("Cannot blend into a buffer smaller than renderer size", nameof(rgbaImage));
         }
 
-        private static unsafe void Blend([NotNull] RgbaImage rgbaImage, [CanBeNull] Assassin.Native.AssImage* image) {
-            var blendedCount = 0;
+        unsafe
+        {
+            var image = (ASS_Image*)_nativePointer;
 
-            while (image != null) {
-                BlendSingle(rgbaImage, image);
+            Blend(rgbaImage, image);
+        }
+    }
 
-                blendedCount += 1;
+    private static unsafe void Blend(RgbaImage rgbaImage, [CanBeNull] ASS_Image* image)
+    {
+        var blendedCount = 0;
 
-                var next = (Assassin.Native.AssImage*)image->Next;
+        while (image is not null)
+        {
+            BlendSingle(rgbaImage, image);
 
-                image = next;
-            }
+            blendedCount += 1;
+
+            var next = (ASS_Image*)image->Next;
+
+            image = next;
+        }
 
 #if DEBUG
-            Debug.Print("Blended images: {0}", blendedCount.ToString());
+        Debug.Print("Blended images: {0}", blendedCount.ToString());
 #endif
+    }
+
+    private static unsafe void BlendSingle(RgbaImage rgbaImage, [NotNull] ASS_Image* image)
+    {
+        var w = image->Width;
+        var h = image->Height;
+        var s = image->Stride;
+
+        if (w == 0 || h == 0)
+        {
+            // "w/h can be zero, in this case the bitmap should not be rendered at all."
+            return;
         }
 
-        private static unsafe void BlendSingle([NotNull] RgbaImage rgbaImage, [NotNull] Assassin.Native.AssImage* image) {
-            var w = image->Width;
-            var h = image->Height;
+        if (rgbaImage.Width < w || rgbaImage.Height < h)
+        {
+            throw new AssException("Cannot render an ASS_Image to a buffer smaller than it");
+        }
 
-            if (w == 0 || h == 0) {
-                return;
-            }
+        var color = Color32.FromUInt32(image->Color);
 
-            if (rgbaImage.Width < w || rgbaImage.Height < h) {
-                throw new AssException("Cannot render an ASS_Image to a buffer smaller than it");
-            }
+        color.A = (byte)(byte.MaxValue - color.A);
 
-            var color = Color32.FromUInt32(image->Color);
+        var opacity = color.A / (float)byte.MaxValue;
 
-            color.A = (byte)(byte.MaxValue - color.A);
+        var src = (byte*)image->Bitmap;
 
-            var opacity = color.A / (float)byte.MaxValue;
+        fixed (Color32* dst = rgbaImage.Buffer)
+        {
+            for (var y = 0; y < h; y += 1)
+            {
+                // "The last bitmap row is not guaranteed to be padded up to stride size, e.g. in the worst case a bitmap has the size stride * (h - 1) + w."
+                var width = y < h - 1 ? w : s;
 
-            var src = (byte*)image->Bitmap;
+                for (var x = 0; x < width; x += 1)
+                {
+                    var srcIndex = y * image->Stride + x;
+                    var dstIndex = (y + image->DestY) * rgbaImage.Width + (x + image->DestX);
 
-            Trace.Assert(src != null);
+                    var k = (src[srcIndex] * opacity) / byte.MaxValue;
 
-            fixed (Color32* buffer = rgbaImage.Buffer) {
-                var dst = buffer;
-
-                for (var y = 0; y < h; y += 1) {
-                    for (var x = 0; x < w; x += 1) {
-                        var srcIndex = y * image->Stride + x;
-                        var dstIndex = (y + image->DestY) * rgbaImage.Width + (x + image->DestX);
-
-                        var k = (src[srcIndex] * opacity) / byte.MaxValue;
-
-                        dst[dstIndex] = AlphaBlend(k, in color, in dst[dstIndex]);
-                    }
+                    dst[dstIndex] = AlphaBlend(k, in color, in dst[dstIndex]);
                 }
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Color32 AlphaBlend(float pixel, in Color32 src, in Color32 dst) {
-            var mk = 1 - pixel;
-
-            var r = Utilities.Clamp((int)(pixel * src.R + dst.R * mk), byte.MinValue, byte.MaxValue);
-            var g = Utilities.Clamp((int)(pixel * src.G + dst.G * mk), byte.MinValue, byte.MaxValue);
-            var b = Utilities.Clamp((int)(pixel * src.B + dst.B * mk), byte.MinValue, byte.MaxValue);
-            var a = Utilities.Clamp((int)(pixel * src.A + dst.A * mk), byte.MinValue, byte.MaxValue);
-
-            return new Color32 {
-                R = (byte)r,
-                G = (byte)g,
-                B = (byte)b,
-                A = (byte)a
-            };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [CanBeNull]
-        private unsafe Assassin.Native.AssImage* GetTypedPointer() {
-            // ReSharper disable once AssignNullToNotNullAttribute
-            return (Assassin.Native.AssImage*)_nativePointer;
-        }
-
-        private readonly IntPtr _nativePointer;
-
-        [NotNull]
-        private readonly AssRenderer _renderer;
-
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Color32 AlphaBlend(float pixel, in Color32 src, in Color32 dst)
+    {
+        var mk = 1 - pixel;
+
+        var r = Utilities.Clamp((int)(pixel * src.R + dst.R * mk), byte.MinValue, byte.MaxValue);
+        var g = Utilities.Clamp((int)(pixel * src.G + dst.G * mk), byte.MinValue, byte.MaxValue);
+        var b = Utilities.Clamp((int)(pixel * src.B + dst.B * mk), byte.MinValue, byte.MaxValue);
+        var a = Utilities.Clamp((int)(pixel * src.A + dst.A * mk), byte.MinValue, byte.MaxValue);
+
+        return new Color32
+        {
+            R = (byte)r,
+            G = (byte)g,
+            B = (byte)b,
+            A = (byte)a
+        };
+    }
+
+    private readonly int _rendererWidth;
+    private readonly int _rendererHeight;
+    private readonly IntPtr _nativePointer;
+
 }

@@ -1,18 +1,22 @@
 using System;
 
-namespace Assassin {
-    public class AssException : ApplicationException {
+namespace Assassin;
 
-        public AssException() {
-        }
+public class AssException : ApplicationException
+{
 
-        public AssException(string message)
-            : base(message) {
-        }
-
-        public AssException(string message, Exception innerException)
-            : base(message, innerException) {
-        }
-
+    public AssException()
+    {
     }
+
+    public AssException(string message)
+        : base(message)
+    {
+    }
+
+    public AssException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
 }
